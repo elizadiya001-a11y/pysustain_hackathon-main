@@ -1,0 +1,31 @@
+{
+  "model_type": "RandomForestClassifier with StandardScaler Pipeline",
+  "n_estimators": 100,
+  "classes": [
+    "Wheat",
+    "Rice",
+    "Cotton",
+    "Maize",
+    "Chickpea (Gram)",
+    "Moong Dal",
+    "Sugarcane",
+    "Pearl Millet (Bajra)"
+  ],
+  "n_train": 1600,
+  "n_test": 400,
+  "accuracy": 0.8825,
+  "macro_precision": 0.8923,
+  "macro_recall": 0.8825,
+  "macro_f1": 0.8834,
+  "baseline_accuracy": 0.125,
+  "accuracy_gain_pct": 606.0,
+  "feature_importances": {
+    "nitrogen": 0.281,
+    "phosphorus": 0.127,
+    "potassium": 0.205,
+    "ph": 0.064,
+    "rainfall_mm": 0.307,
+    "temp_c": 0.016
+  },
+  "created_at": "2026-10-11 10:22:16"
+}

@@ -1,0 +1,12 @@
+{
+  "model_name": "Agronomic Response Surface Ensemble",
+  "rmse": 0.93,
+  "mae": 0.73,
+  "r2": 1.0,
+  "baseline_rmse": 73.1,
+  "baseline_mae": 47.94,
+  "rmse_improvement_pct": 98.7,
+  "held_out_samples": 1000,
+  "coverage_80_nominal": 80.0,
+  "coverage_80_empirical": 81.4
+}

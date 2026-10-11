@@ -1,6 +1,6 @@
-""" Kinda failed mb
-FASAL — Mobile-First Android Browser Adaptation & Digital Farm Twin.
-PySustain-2026 Sustainable Agriculture Decision-Support Prototype.
+"""
+FASAL AI — Intelligent Crop Recommendation & Farm Digital Twin.
+PySustain Hackathon · Track: Intelligent Solutions for Sustainable Agriculture.
 
 Authors: Team FASAL (Gargi Bhojkar, Srijon Sarkar, Shansita Padhi, Diya Elizabeth Reji)
 """
@@ -8,40 +8,42 @@ Authors: Team FASAL (Gargi Bhojkar, Srijon Sarkar, Shansita Padhi, Diya Elizabet
 import os
 import streamlit as st
 
-# Configure Streamlit page for mobile-first Android viewports & wide desktops
+# Configure Streamlit page layout
 st.set_page_config(
-    page_title="FASAL — Farm Digital Twin",
+    page_title="FASAL AI — Intelligent Crop Recommendation & Digital Twin",
     page_icon="🌾",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# Load Mobile-First CSS Stylesheet
+# Load Mobile-First & Desktop CSS Stylesheet
 css_path = os.path.join(os.path.dirname(__file__), "static", "style.css")
 if os.path.exists(css_path):
     with open(css_path, "r", encoding="utf-8") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-# Imports from core and views
-from core.db import get_farm_by_id, get_farm_unified_df
-from core.persistence import get_default_scenarios
-from views.overview import render_overview
-from views.farm_setup import render_farm_setup
-from views.simulator import render_simulator
-from views.compare import render_compare
-from views.sustainability_view import render_sustainability
-from views.recommendations_view import render_recommendations
-from views.model_info_view import render_model_info
+# Imports from data loaders, core and views
+from src.data_loader import get_unified_agricultural_dataset, get_farm_record_by_id
+from src.supabase_client import check_connection_health
+
+from views.home_dashboard import render_home_dashboard
+from views.farm_assessment import render_farm_assessment
+from views.soil_analysis_view import render_soil_analysis
+from views.crop_recommendations_view import render_crop_recommendations
+from views.current_crop_comparison_view import render_current_crop_comparison
+from views.digital_twin_view import render_digital_twin
+from views.dataset_explorer_view import render_dataset_explorer
+from views.model_performance_view import render_model_performance
+from views.recommendation_history_view import render_recommendation_history
 
 # Initialize Session State
 if "current_farm" not in st.session_state:
-    st.session_state["current_farm"] = get_farm_by_id("plot_001")
-
-if "saved_scenarios" not in st.session_state:
-    st.session_state["saved_scenarios"] = get_default_scenarios(st.session_state["current_farm"])
+    unified_df, _, _ = get_unified_agricultural_dataset()
+    default_record = unified_df.iloc[0].to_dict() if not unified_df.empty else {}
+    st.session_state["current_farm"] = default_record
 
 if "current_tab" not in st.session_state:
-    st.session_state["current_tab"] = "Overview"
+    st.session_state["current_tab"] = "Home Dashboard"
 
 current_farm = st.session_state["current_farm"]
 
@@ -51,29 +53,30 @@ st.markdown(f"""
     <div class="fasal-brand">
         <div class="fasal-icon">🌾</div>
         <div>
-            <h1 class="fasal-title">FASAL</h1>
-            <p class="fasal-tagline">Farm Analytics for Sustainable &amp; Lucrative Farming</p>
+            <h1 class="fasal-title">FASAL AI</h1>
+            <p class="fasal-tagline">Intelligent Crop Recommendation &amp; Farm Digital Twin</p>
         </div>
     </div>
     <div class="fasal-badge">
-        {current_farm.get('farm_id', 'plot_001')} • {current_farm.get('area_acres', 2.0)} ac
+        {current_farm.get('farm_id', 'plot_001')} • {current_farm.get('area_acres', 2.0)} ac ({current_farm.get('district', 'District')})
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# Navigation tabs definition
+# 9 Core Pages Definition
 PAGES = [
-    "Overview",
-    "Farm Setup",
-    "Simulator",
-    "Compare",
-    "Sustainability",
-    "Recommendations",
-    "Model Info"
+    "Home Dashboard",
+    "Farm Assessment",
+    "Soil Analysis",
+    "Crop Recommendations",
+    "Current Crop Comparison",
+    "Farm Digital Twin",
+    "Dataset Explorer",
+    "Model Performance",
+    "Recommendation History"
 ]
 
-# Mobile-First Segmented / Pill Navigation
-# Streamlit's radio with horizontal=True provides native responsive touch-friendly navigation
+# Primary Navigation Bar (Pill selector)
 selected_page = st.radio(
     "Navigation",
     options=PAGES,
@@ -91,36 +94,50 @@ if selected_page != st.session_state["current_tab"]:
 current_tab = st.session_state["current_tab"]
 
 # Render the Selected View
-if current_tab == "Overview":
-    render_overview()
-elif current_tab == "Farm Setup":
-    render_farm_setup()
-elif current_tab == "Simulator":
-    render_simulator()
-elif current_tab == "Compare":
-    render_compare()
-elif current_tab == "Sustainability":
-    render_sustainability()
-elif current_tab == "Recommendations":
-    render_recommendations()
-elif current_tab == "Model Info":
-    render_model_info()
+if current_tab == "Home Dashboard":
+    render_home_dashboard()
+elif current_tab == "Farm Assessment":
+    render_farm_assessment()
+elif current_tab == "Soil Analysis":
+    render_soil_analysis()
+elif current_tab == "Crop Recommendations":
+    render_crop_recommendations()
+elif current_tab == "Current Crop Comparison":
+    render_current_crop_comparison()
+elif current_tab == "Farm Digital Twin":
+    render_digital_twin()
+elif current_tab == "Dataset Explorer":
+    render_dataset_explorer()
+elif current_tab == "Model Performance":
+    render_model_performance()
+elif current_tab == "Recommendation History":
+    render_recommendation_history()
 
-# Sidebar: Quick Info & Live Connectivity
+# Sidebar: Quick Info, Cloud Twin Status & Wi-Fi Demo
 with st.sidebar:
-    st.markdown("### 🌾 FASAL Twin Control")
-    st.caption("PySustain-2026 Agricultural Decision Support")
+    st.markdown("### 🌾 FASAL AI Control")
+    st.caption("Intelligent Crop Recommendation & Farm Digital Twin")
+
+    # Cloud Connectivity Status
+    health = check_connection_health()
+    if health.get("connected"):
+        st.success(f"🟢 Cloud Connected (`bwlopgkkaasgmkdkoayb`)")
+    else:
+        st.warning("🟠 Local High-Fidelity Twin Active")
+
     st.markdown(f"""
     **Active Farm:** `{current_farm.get('farm_id')}`  
-    **Farmer:** {current_farm.get('farmer_name')}  
+    **Farmer:** {current_farm.get('farmer_name', 'Farmer')}  
     **District:** {current_farm.get('district')}, {current_farm.get('state')}  
-    **Holding:** {current_farm.get('area_acres')} Acres  
+    **Landholding:** {current_farm.get('area_acres')} Acres  
+    **Current Crop:** {current_farm.get('current_crop')}  
     **Soil pH:** {current_farm.get('ph')}  
-    **Texture:** {current_farm.get('texture')}  
+    **Soil Texture:** {current_farm.get('texture')}  
     """)
+
     st.divider()
-    st.markdown("##### 📱 Mobile Wi-Fi Instructions")
+    st.markdown("##### 📱 Hackathon Wi-Fi Demo")
     st.caption("To open on an Android phone over local Wi-Fi, run:")
     st.code("python -m streamlit run app.py --server.address 0.0.0.0", language="bash")
     st.divider()
-    st.caption("BACSE101 — Intelligent Solutions for Sustainable Agriculture")
+    st.caption("BACSE101 — PySustain CSE Hackathon 2026")
