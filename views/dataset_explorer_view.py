@@ -122,25 +122,128 @@ def render_dataset_explorer():
             st.plotly_chart(fig_dist, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
 
     # 4. Anonymized Public Data Sample Preview
-    st.markdown("##### 🔒 Privacy-Preserving Agronomic Sample")
-    st.caption("Personal identifiers (Farmer Name, Phone, ID) are excluded from public exploratory displays to protect farmer confidentiality.")
-    
-    col_label_map = {
-        "farm_id": "Farm Parcel ID",
-        "state": "State",
-        "district": "District",
-        "village": "Village",
-        "area_acres": "Field Area (Acres)",
-        "current_crop": "Current Baseline Crop",
-        "sowing_date": "Sowing Date",
-        "texture": "Soil Texture",
-        "ph": "Soil pH",
-        "organic_carbon": "Organic Carbon (%)",
-        "nitrogen_kg_ha": "Available N (kg/ha)",
-        "phosphorus_kg_ha": "Available P (kg/ha)",
-        "potassium_kg_ha": "Available K (kg/ha)",
-        "rainfall_mm": "Seasonal Rainfall (mm)"
-    }
-    safe_cols = [c for c in unified_df.columns if c not in ["farmer_name", "farmer_id"]]
-    display_df = unified_df[safe_cols].head(8).rename(columns=col_label_map)
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    st.markdown("##### 🔒 Anonymized Public Data Sample Preview")
+    st.caption("Personal identifiers (Farmer Name, Phone, ID) are strictly excluded from public exploratory displays to protect farmer confidentiality.")
+
+    if not unified_df.empty:
+        # Technical column names mapped to user-friendly display labels
+        column_display_map = {
+            "farm_id": "Farm ID",
+            "area_acres": "Area (acres)",
+            "current_crop": "Current Crop",
+            "sowing_date": "Sowing Date",
+            "latitude": "Latitude",
+            "longitude": "Longitude",
+            "district": "District",
+            "state": "State",
+            "ph": "Soil pH",
+            "organic_carbon": "Organic Carbon (%)",
+            "nitrogen_kg_ha": "Nitrogen (kg/ha)",
+            "phosphorus_kg_ha": "Phosphorus (kg/ha)",
+            "potassium_kg_ha": "Potassium (kg/ha)",
+            "texture": "Soil Texture",
+            "soil_group": "Soil Group",
+            "mean_temp_max": "Max Temperature (°C)",
+            "mean_temp_min": "Min Temperature (°C)",
+            "total_rainfall_7d": "7-Day Rainfall (mm)",
+            "mean_humidity": "Relative Humidity (%)",
+            "ndvi_real": "Sentinel-2 NDVI",
+            "ndmi_real": "Sentinel-2 NDMI",
+            "bsi_real": "Sentinel-2 Bare Soil Index",
+            "sand_pct": "Sand Content (%)",
+            "clay_pct": "Clay Content (%)",
+            "silt_pct": "Silt Content (%)",
+            "ph_soilgrids": "SoilGrids pH",
+            "soc_g_per_kg": "Soil Organic Carbon (g/kg)",
+            "texture_usda": "USDA Texture Class",
+            "data_source": "Data Source",
+            "image_path": "Satellite Image Path",
+            "image_url": "Satellite Image URL",
+            "village": "Village",
+            "rainfall_mm": "Rainfall (mm)",
+            "irrigation_type": "Irrigation Method",
+            "water_cap_mm": "Aquifer Water Cap (mm)"
+        }
+
+        # Privacy Filter: exclude sensitive farmer identifiers
+        sensitive_fields = {"farmer_name", "farmer_id", "phone", "phone_number", "mobile", "aadhaar", "contact"}
+        safe_cols = [c for c in unified_df.columns if c.lower() not in sensitive_fields]
+
+        # Responsive sample controls
+        ctrl_col1, ctrl_col2, ctrl_col3 = st.columns([1, 1, 1])
+        with ctrl_col1:
+            dist_options = ["All Districts"] + sorted(list(unified_df["district"].dropna().unique())) if "district" in unified_df.columns else ["All Districts"]
+            selected_dist = st.selectbox("Filter Sample by District:", options=dist_options, key="anon_filter_district")
+        with ctrl_col2:
+            crop_options = ["All Crops"] + sorted(list(unified_df["current_crop"].dropna().unique())) if "current_crop" in unified_df.columns else ["All Crops"]
+            selected_crop = st.selectbox("Filter Sample by Crop:", options=crop_options, key="anon_filter_crop")
+        with ctrl_col3:
+            row_limit_opt = st.selectbox("Sample Size:", options=[10, 25, 50, "All Records"], index=0, key="anon_sample_limit")
+
+        # Create display-only copy preserving original data types and column order
+        filtered_sample = unified_df[safe_cols].copy()
+        if selected_dist != "All Districts" and "district" in filtered_sample.columns:
+            filtered_sample = filtered_sample[filtered_sample["district"] == selected_dist]
+        if selected_crop != "All Crops" and "current_crop" in filtered_sample.columns:
+            filtered_sample = filtered_sample[filtered_sample["current_crop"] == selected_crop]
+
+        if row_limit_opt != "All Records":
+            filtered_sample = filtered_sample.head(int(row_limit_opt))
+
+        # Rename columns to user-friendly titles on the display copy
+        display_sample = filtered_sample.rename(
+            columns=lambda c: column_display_map.get(c, c.replace("_", " ").title())
+        )
+
+        # Streamlit column configuration for readable formatting and non-clipped headers
+        col_config = {
+            "Farm ID": st.column_config.TextColumn("Farm ID", width="small", help="Unique anonymized farm parcel identifier"),
+            "Area (acres)": st.column_config.NumberColumn("Area (acres)", format="%.2f", width="small"),
+            "Current Crop": st.column_config.TextColumn("Current Crop", width="medium"),
+            "Sowing Date": st.column_config.TextColumn("Sowing Date", width="small"),
+            "Latitude": st.column_config.NumberColumn("Latitude", format="%.4f", width="small"),
+            "Longitude": st.column_config.NumberColumn("Longitude", format="%.4f", width="small"),
+            "District": st.column_config.TextColumn("District", width="small"),
+            "State": st.column_config.TextColumn("State", width="small"),
+            "Soil pH": st.column_config.NumberColumn("Soil pH", format="%.2f", width="small"),
+            "Organic Carbon (%)": st.column_config.NumberColumn("Organic Carbon (%)", format="%.2f", width="medium"),
+            "Nitrogen (kg/ha)": st.column_config.NumberColumn("Nitrogen (kg/ha)", format="%.1f", width="medium"),
+            "Phosphorus (kg/ha)": st.column_config.NumberColumn("Phosphorus (kg/ha)", format="%.1f", width="medium"),
+            "Potassium (kg/ha)": st.column_config.NumberColumn("Potassium (kg/ha)", format="%.1f", width="medium"),
+            "Soil Texture": st.column_config.TextColumn("Soil Texture", width="medium"),
+            "Soil Group": st.column_config.TextColumn("Soil Group", width="small"),
+            "Max Temperature (°C)": st.column_config.NumberColumn("Max Temperature (°C)", format="%.1f", width="medium"),
+            "Min Temperature (°C)": st.column_config.NumberColumn("Min Temperature (°C)", format="%.1f", width="medium"),
+            "7-Day Rainfall (mm)": st.column_config.NumberColumn("7-Day Rainfall (mm)", format="%.1f", width="medium"),
+            "Relative Humidity (%)": st.column_config.NumberColumn("Relative Humidity (%)", format="%.1f", width="medium"),
+            "Sentinel-2 NDVI": st.column_config.NumberColumn("Sentinel-2 NDVI", format="%.3f", width="medium"),
+            "Sentinel-2 NDMI": st.column_config.NumberColumn("Sentinel-2 NDMI", format="%.3f", width="medium"),
+            "Sentinel-2 Bare Soil Index": st.column_config.NumberColumn("Sentinel-2 Bare Soil Index", format="%.3f", width="medium"),
+            "Sand Content (%)": st.column_config.NumberColumn("Sand Content (%)", format="%.1f", width="medium"),
+            "Clay Content (%)": st.column_config.NumberColumn("Clay Content (%)", format="%.1f", width="medium"),
+            "Silt Content (%)": st.column_config.NumberColumn("Silt Content (%)", format="%.1f", width="medium"),
+            "SoilGrids pH": st.column_config.NumberColumn("SoilGrids pH", format="%.2f", width="small"),
+            "Soil Organic Carbon (g/kg)": st.column_config.NumberColumn("Soil Organic Carbon (g/kg)", format="%.2f", width="medium"),
+            "USDA Texture Class": st.column_config.TextColumn("USDA Texture Class", width="medium"),
+            "Data Source": st.column_config.TextColumn("Data Source", width="medium"),
+        }
+
+        st.markdown(f"Displaying **{len(display_sample)}** anonymized farm records across **{len(display_sample.columns)}** agronomic attributes:")
+        st.dataframe(
+            display_sample,
+            column_config=col_config,
+            use_container_width=True,
+            hide_index=True
+        )
+
+        # Download button for the anonymized preview with clean headers
+        csv_data = display_sample.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="📥 Download Anonymized Public Data Sample (CSV)",
+            data=csv_data,
+            file_name="Fasal_Anonymized_Public_Data_Sample.csv",
+            mime="text/csv",
+            key="btn_dl_anonymized_sample"
+        )
+    else:
+        st.info("No records available in the unified dataset.")
