@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private static final String PREFS_NAME = "FasalPrefs";
     private static final String KEY_SERVER_URL = "server_url";
-    private static final String DEFAULT_URL = "http://10.0.2.2:8501"; // Default for Android Emulator; Wi-Fi IP for physical devices
+    private static final String DEFAULT_URL = "http://172.17.208.23:8501"; // Default Wi-Fi IP for physical devices
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -73,6 +73,7 @@ public class MainActivity extends Activity {
     private void loadCurrentServerUrl() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String currentUrl = prefs.getString(KEY_SERVER_URL, DEFAULT_URL);
+        Toast.makeText(this, "Connecting to: " + currentUrl + "\n(Long-press screen to change server)", Toast.LENGTH_LONG).show();
         webView.loadUrl(currentUrl);
     }
 
