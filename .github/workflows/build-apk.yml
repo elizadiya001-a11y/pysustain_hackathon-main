@@ -34,17 +34,9 @@ jobs:
       - name: Build Debug APK
         working-directory: ./android
         run: |
-          gradle assembleDebug --stacktrace 2>&1 | tee ../gradle_build.log
-
-      - name: Upload Gradle Build Log on Failure
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-build-log
-          path: gradle_build.log
+          gradle assembleDebug --stacktrace
 
       - name: Upload APK Artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: fasal-ai-debug-apk
