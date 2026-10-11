@@ -7,6 +7,7 @@ Enforces unit parity and explains why physical biomass differs from economic pro
 """
 
 import streamlit as st
+import pandas as pd
 import plotly.graph_objects as go
 from src.crop_recommendation import generate_crop_recommendations
 from src.crop_comparison import build_crop_comparison
@@ -14,8 +15,8 @@ from core.config import CROP_AGRONOMY
 
 
 def render_current_crop_comparison():
-    st.markdown('<div class="fasal-card-title">⚖️ Current Crop vs Alternative Comparison</div>', unsafe_allow_html=True)
-    st.caption("Side-by-side yield, financial margin, and water balance comparison under equivalent agro-climatic conditions.")
+    st.html('<div class="fasal-card-title">⚖️ Current Crop vs Alternative Comparison</div>')
+    st.caption("Compare your existing crop with alternative crops using available agronomic and economic data.")
 
     current_farm = st.session_state.get("current_farm", {})
     recs = generate_crop_recommendations(farm_state=current_farm, water_cap_mm=600.0)
@@ -29,7 +30,8 @@ def render_current_crop_comparison():
     selected_alt_crop = st.selectbox(
         "Choose an Alternative Crop to Compare:",
         options=alt_options,
-        index=0 if alt_options else 0
+        index=0 if alt_options else 0,
+        help="Select any alternative crop from the database catalog to perform an instant head-to-head economic comparison."
     )
 
     alt_res = next((r for r in ranked_crops if r["crop"] == selected_alt_crop), top1_res)
@@ -38,53 +40,55 @@ def render_current_crop_comparison():
     # 1. Headline Metric Cards
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
-        profit_delta = comp["economics"]["profit_difference"]
-        st.markdown(f"""
+        profit_delta = comp["economics"].get("profit_difference", 0.0)
+        profit_color = "#2d6a4f" if profit_delta >= 0 else "#d90429"
+        st.html(f"""
         <div class="fasal-card" style="text-align: center;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748b;">NET PROFIT DELTA</div>
-            <div style="font-size: 24px; font-weight: 800; color: {'#2d6a4f' if profit_delta >= 0 else '#d90429'}; margin: 4px 0;">
+            <div style="font-size: 11px; font-weight: 700; color: #475569;">NET PROFIT GAIN</div>
+            <div style="font-size: 24px; font-weight: 800; color: {profit_color}; margin: 4px 0;">
                 {'+₹' if profit_delta >= 0 else '-₹'}{abs(profit_delta):,.0f}
             </div>
-            <span style="font-size: 12px; color: #64748b;">
-                ₹{comp['economics']['current_net_profit']:,.0f} ➔ ₹{comp['economics']['recommended_net_profit']:,.0f}
+            <span style="font-size: 12px; color: #475569;">
+                ₹{comp['economics'].get('current_net_profit', 0.0):,.0f} ➔ ₹{comp['economics'].get('recommended_net_profit', 0.0):,.0f}
             </span>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     with col_m2:
-        water_saved = comp["water"]["water_saved_pct"]
-        st.markdown(f"""
+        water_saved = comp["water"].get("water_saved_pct", 0.0)
+        st.html(f"""
         <div class="fasal-card" style="text-align: center;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748b;">GROUNDWATER SAVING</div>
+            <div style="font-size: 11px; font-weight: 700; color: #475569;">GROUNDWATER CONSERVATION</div>
             <div style="font-size: 24px; font-weight: 800; color: #2d6a4f; margin: 4px 0;">
                 {water_saved:+.0f}%
             </div>
-            <span style="font-size: 12px; color: #64748b;">
-                {comp['water']['current_water_liters']:,.0f}L ➔ {comp['water']['recommended_water_liters']:,.0f}L
+            <span style="font-size: 12px; color: #475569;">
+                {comp['water'].get('current_water_liters', 0.0):,.0f}L ➔ {comp['water'].get('recommended_water_liters', 0.0):,.0f}L
             </span>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     with col_m3:
-        yield_diff = comp["yield"]["abs_difference"]
-        st.markdown(f"""
+        yield_diff = comp["yield"].get("abs_difference", 0.0)
+        st.html(f"""
         <div class="fasal-card" style="text-align: center;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748b;">YIELD PARITY (Q/ACRE)</div>
+            <div style="font-size: 11px; font-weight: 700; color: #475569;">YIELD DIFFERENCE</div>
             <div style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 4px 0;">
                 {yield_diff:+.1f} q/ac
             </div>
-            <span style="font-size: 12px; color: #64748b;">
-                {comp['yield']['current_q_acre']} ➔ {comp['yield']['recommended_q_acre']} q/acre
+            <span style="font-size: 12px; color: #475569;">
+                {comp['yield'].get('current_q_acre', 0.0)} ➔ {comp['yield'].get('recommended_q_acre', 0.0)} q/acre
             </span>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     # 2. Side-by-Side Detailed Breakdown
     st.markdown("##### 📊 Detailed Economic & Agronomic Balance")
-    
+    st.caption("Review side-by-side revenue, cost, profit margins, and water requirements under identical farm acreage.")
+
     col_comp_a, col_comp_b = st.columns(2)
     with col_comp_a:
-        st.markdown(f"""
+        st.html(f"""
         <div class="fasal-card" style="border-top: 4px solid #64748b; background: #ffffff;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 11px; font-weight: 700; color: #64748b;">CURRENT BASELINE</span>
@@ -92,20 +96,20 @@ def render_current_crop_comparison():
                     {curr_res.get('season', 'Rabi')}
                 </span>
             </div>
-            <h3 style="margin: 0 0 10px 0; color: #1e293b;">{comp['current_crop']}</h3>
+            <h3 style="margin: 0 0 10px 0; color: #1e293b;">{comp.get('current_crop', 'Current Crop')}</h3>
             <div style="font-size: 13px; line-height: 1.8; color: #334155;">
-                <div>🌾 <strong>Yield (q/ac):</strong> {comp['yield']['current_q_acre']} q/ac ({comp['yield']['current_tonnes_ha']} t/ha)</div>
-                <div>💰 <strong>Gross Revenue:</strong> ₹{comp['economics']['current_gross_revenue']:,.0f}</div>
-                <div>📉 <strong>Cultivation Cost:</strong> ₹{comp['economics']['current_cultivation_cost']:,.0f}</div>
-                <div>🏷️ <strong>Net Profit:</strong> ₹{comp['economics']['current_net_profit']:,.0f} (₹{comp['economics']['current_net_profit_acre']:,.0f}/ac)</div>
-                <div>💧 <strong>Water Used:</strong> {comp['water']['current_water_liters']:,.0f} L</div>
+                <div>🌾 <strong>Yield (q/ac):</strong> {comp['yield'].get('current_q_acre', 0.0)} q/ac ({comp['yield'].get('current_tonnes_ha', 0.0)} t/ha)</div>
+                <div>💰 <strong>Gross Revenue:</strong> ₹{comp['economics'].get('current_gross_revenue', 0.0):,.0f}</div>
+                <div>📉 <strong>Cultivation Cost:</strong> ₹{comp['economics'].get('current_cultivation_cost', 0.0):,.0f}</div>
+                <div>🏷️ <strong>Net Profit:</strong> ₹{comp['economics'].get('current_net_profit', 0.0):,.0f} (₹{comp['economics'].get('current_net_profit_acre', 0.0):,.0f}/ac)</div>
+                <div>💧 <strong>Water Used:</strong> {comp['water'].get('current_water_liters', 0.0):,.0f} L</div>
                 <div>⚖️ <strong>Water Cap:</strong> {'✅ Compliant' if curr_res.get('is_within_cap') else '⚠️ Exceeded'}</div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     with col_comp_b:
-        st.markdown(f"""
+        st.html(f"""
         <div class="fasal-card" style="border-top: 4px solid #2d6a4f; background: #f0fdf4;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 11px; font-weight: 700; color: #166534;">RECOMMENDED ALTERNATIVE</span>
@@ -113,55 +117,56 @@ def render_current_crop_comparison():
                     {alt_res.get('season', 'Rabi')} · {alt_res.get('suitability_score', 85)}% Match
                 </span>
             </div>
-            <h3 style="margin: 0 0 10px 0; color: #1b4332;">{comp['recommended_crop']}</h3>
+            <h3 style="margin: 0 0 10px 0; color: #1b4332;">{comp.get('recommended_crop', 'Alternative Crop')}</h3>
             <div style="font-size: 13px; line-height: 1.8; color: #1e293b;">
-                <div>🌾 <strong>Yield (q/ac):</strong> {comp['yield']['recommended_q_acre']} q/ac ({comp['yield']['recommended_tonnes_ha']} t/ha)</div>
-                <div>💰 <strong>Gross Revenue:</strong> ₹{comp['economics']['recommended_gross_revenue']:,.0f}</div>
-                <div>📉 <strong>Cultivation Cost:</strong> ₹{comp['economics']['recommended_cultivation_cost']:,.0f}</div>
-                <div>🏷️ <strong>Net Profit:</strong> <span style="color: #166534; font-weight: bold;">₹{comp['economics']['recommended_net_profit']:,.0f}</span> (₹{comp['economics']['recommended_net_profit_acre']:,.0f}/ac)</div>
-                <div>💧 <strong>Water Used:</strong> {comp['water']['recommended_water_liters']:,.0f} L ({comp['water']['water_saved_pct']:.0f}% saved)</div>
+                <div>🌾 <strong>Yield (q/ac):</strong> {comp['yield'].get('recommended_q_acre', 0.0)} q/ac ({comp['yield'].get('recommended_tonnes_ha', 0.0)} t/ha)</div>
+                <div>💰 <strong>Gross Revenue:</strong> ₹{comp['economics'].get('recommended_gross_revenue', 0.0):,.0f}</div>
+                <div>📉 <strong>Cultivation Cost:</strong> ₹{comp['economics'].get('recommended_cultivation_cost', 0.0):,.0f}</div>
+                <div>🏷️ <strong>Net Profit:</strong> <span style="color: #166534; font-weight: bold;">₹{comp['economics'].get('recommended_net_profit', 0.0):,.0f}</span> (₹{comp['economics'].get('recommended_net_profit_acre', 0.0):,.0f}/ac)</div>
+                <div>💧 <strong>Water Used:</strong> {comp['water'].get('recommended_water_liters', 0.0):,.0f} L ({comp['water'].get('water_saved_pct', 0.0):.0f}% saved)</div>
                 <div>⚖️ <strong>Water Cap:</strong> {'✅ Within Cap' if alt_res.get('is_within_cap') else '⚠️ Exceeds Cap'}</div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
-    import pandas as pd
     data_rows = [
-        {"Agronomic Attribute": "Crop & Season", "Current Crop": f"{comp['current_crop']} ({curr_res.get('season')})", "Alternative Crop": f"{comp['recommended_crop']} ({alt_res.get('season')})", "Net Difference": "Diversification"},
-        {"Agronomic Attribute": "Yield (Quintals / Acre)", "Current Crop": f"{comp['yield']['current_q_acre']} q/ac", "Alternative Crop": f"{comp['yield']['recommended_q_acre']} q/ac", "Net Difference": f"{comp['yield']['abs_difference']:+.2f} q/ac ({comp['yield']['pct_difference']:+.1f}%)" if comp['yield']['pct_difference'] is not None else "N/A"},
-        {"Agronomic Attribute": "Yield (Tonnes / Hectare)", "Current Crop": f"{comp['yield']['current_tonnes_ha']} t/ha", "Alternative Crop": f"{comp['yield']['recommended_tonnes_ha']} t/ha", "Net Difference": f"{(comp['yield']['recommended_tonnes_ha'] - comp['yield']['current_tonnes_ha']):+.2f} t/ha"},
-        {"Agronomic Attribute": "Gross Revenue", "Current Crop": f"₹{comp['economics']['current_gross_revenue']:,.0f}", "Alternative Crop": f"₹{comp['economics']['recommended_gross_revenue']:,.0f}", "Net Difference": f"+₹{comp['economics']['revenue_difference']:,.0f}" if comp['economics']['revenue_difference'] >= 0 else f"-₹{abs(comp['economics']['revenue_difference']):,.0f}"},
-        {"Agronomic Attribute": "Estimated Cost", "Current Crop": f"₹{comp['economics']['current_cultivation_cost']:,.0f}", "Alternative Crop": f"₹{comp['economics']['recommended_cultivation_cost']:,.0f}", "Net Difference": f"₹{comp['economics']['cost_difference']:+,.0f}"},
-        {"Agronomic Attribute": "Net Profit Margin", "Current Crop": f"₹{comp['economics']['current_net_profit']:,.0f}", "Alternative Crop": f"₹{comp['economics']['recommended_net_profit']:,.0f}", "Net Difference": f"+₹{comp['economics']['profit_difference']:,.0f}" if comp['economics']['profit_difference'] >= 0 else f"-₹{abs(comp['economics']['profit_difference']):,.0f}"},
-        {"Agronomic Attribute": "Irrigation Water (L)", "Current Crop": f"{comp['water']['current_water_liters']:,.0f} L", "Alternative Crop": f"{comp['water']['recommended_water_liters']:,.0f} L", "Net Difference": f"{comp['water']['water_saved_pct']:.0f}% Conserved"},
-        {"Agronomic Attribute": "Aquifer Water Cap", "Current Crop": "Compliant" if curr_res.get("is_within_cap") else "Exceeded", "Alternative Crop": "Compliant" if alt_res.get("is_within_cap") else "Exceeded", "Net Difference": "✅ Within Cap" if alt_res.get("is_within_cap") else "⚠️ Exceeds Cap"}
+        {"Agronomic & Economic Parameter": "Crop Name & Cropping Season", "Current Baseline Crop": f"{comp.get('current_crop')} ({curr_res.get('season')})", "Recommended Alternative": f"{comp.get('recommended_crop')} ({alt_res.get('season')})", "Net Difference / Benefit": "Crop Diversification Match"},
+        {"Agronomic & Economic Parameter": "Yield in Quintals per Acre (q/ac)", "Current Baseline Crop": f"{comp['yield'].get('current_q_acre')} q/ac", "Recommended Alternative": f"{comp['yield'].get('recommended_q_acre')} q/ac", "Net Difference / Benefit": f"{comp['yield'].get('abs_difference', 0.0):+.2f} q/ac ({comp['yield'].get('pct_difference', 0.0):+.1f}%)" if comp['yield'].get('pct_difference') is not None else "N/A"},
+        {"Agronomic & Economic Parameter": "Yield in Tonnes per Hectare (t/ha)", "Current Baseline Crop": f"{comp['yield'].get('current_tonnes_ha')} t/ha", "Recommended Alternative": f"{comp['yield'].get('recommended_tonnes_ha')} t/ha", "Net Difference / Benefit": f"{(comp['yield'].get('recommended_tonnes_ha', 0.0) - comp['yield'].get('current_tonnes_ha', 0.0)):+.2f} t/ha"},
+        {"Agronomic & Economic Parameter": "Gross Revenue (₹)", "Current Baseline Crop": f"₹{comp['economics'].get('current_gross_revenue', 0.0):,.0f}", "Recommended Alternative": f"₹{comp['economics'].get('recommended_gross_revenue', 0.0):,.0f}", "Net Difference / Benefit": f"+₹{comp['economics'].get('revenue_difference', 0.0):,.0f}" if comp['economics'].get('revenue_difference', 0.0) >= 0 else f"-₹{abs(comp['economics'].get('revenue_difference', 0.0)):,.0f}"},
+        {"Agronomic & Economic Parameter": "Estimated Cultivation Cost (₹)", "Current Baseline Crop": f"₹{comp['economics'].get('current_cultivation_cost', 0.0):,.0f}", "Recommended Alternative": f"₹{comp['economics'].get('recommended_cultivation_cost', 0.0):,.0f}", "Net Difference / Benefit": f"₹{comp['economics'].get('cost_difference', 0.0):+,.0f}"},
+        {"Agronomic & Economic Parameter": "Net Profit Margin (₹)", "Current Baseline Crop": f"₹{comp['economics'].get('current_net_profit', 0.0):,.0f}", "Recommended Alternative": f"₹{comp['economics'].get('recommended_net_profit', 0.0):,.0f}", "Net Difference / Benefit": f"+₹{comp['economics'].get('profit_difference', 0.0):,.0f}" if comp['economics'].get('profit_difference', 0.0) >= 0 else f"-₹{abs(comp['economics'].get('profit_difference', 0.0)):,.0f}"},
+        {"Agronomic & Economic Parameter": "Net Profit per Acre (₹/acre)", "Current Baseline Crop": f"₹{comp['economics'].get('current_net_profit_acre', 0.0):,.0f}/ac", "Recommended Alternative": f"₹{comp['economics'].get('recommended_net_profit_acre', 0.0):,.0f}/ac", "Net Difference / Benefit": f"₹{comp['economics'].get('profit_acre_difference', 0.0):+,.0f}/ac"},
+        {"Agronomic & Economic Parameter": "Irrigation Water Demand (Liters)", "Current Baseline Crop": f"{comp['water'].get('current_water_liters', 0.0):,.0f} L", "Recommended Alternative": f"{comp['water'].get('recommended_water_liters', 0.0):,.0f} L", "Net Difference / Benefit": f"{comp['water'].get('water_saved_pct', 0.0):.0f}% Conserved"},
+        {"Agronomic & Economic Parameter": "Aquifer Water Cap Feasibility", "Current Baseline Crop": "Compliant" if curr_res.get("is_within_cap") else "Exceeded", "Recommended Alternative": "Compliant" if alt_res.get("is_within_cap") else "Exceeded", "Net Difference / Benefit": "✅ Within Cap" if alt_res.get("is_within_cap") else "⚠️ Exceeds Cap"}
     ]
     st.dataframe(pd.DataFrame(data_rows), use_container_width=True, hide_index=True)
 
-
     # 3. Interactive Plotly Visual Comparison
     st.markdown("##### 📈 Financial & Resource Trade-Off Visuals")
+    st.caption("Visualize financial returns and water consumption trade-offs side-by-side.")
+
     c_chart1, c_chart2 = st.columns(2)
 
     with c_chart1:
         # Profit vs Cost Bar Chart
         fig_bar = go.Figure(data=[
             go.Bar(
-                name="Gross Revenue",
+                name="Gross Revenue (₹)",
                 x=[comp["current_crop"], comp["recommended_crop"]],
-                y=[comp["economics"]["current_gross_revenue"], comp["economics"]["recommended_gross_revenue"]],
+                y=[comp["economics"].get("current_gross_revenue", 0.0), comp["economics"].get("recommended_gross_revenue", 0.0)],
                 marker_color="#2d6a4f"
             ),
             go.Bar(
-                name="Cultivation Cost",
+                name="Cultivation Cost (₹)",
                 x=[comp["current_crop"], comp["recommended_crop"]],
-                y=[comp["economics"]["current_cultivation_cost"], comp["economics"]["recommended_cultivation_cost"]],
-                marker_color="#e76f51"
+                y=[comp["economics"].get("current_cultivation_cost", 0.0), comp["economics"].get("recommended_cultivation_cost", 0.0)],
+                marker_color="#d97706"
             ),
             go.Bar(
-                name="Net Profit",
+                name="Net Profit (₹)",
                 x=[comp["current_crop"], comp["recommended_crop"]],
-                y=[comp["economics"]["current_net_profit"], comp["economics"]["recommended_net_profit"]],
+                y=[comp["economics"].get("current_net_profit", 0.0), comp["economics"].get("recommended_net_profit", 0.0)],
                 marker_color="#52b788"
             )
         ])
@@ -178,12 +183,14 @@ def render_current_crop_comparison():
 
     with c_chart2:
         # Water consumption comparison
+        curr_kl = comp["water"].get("current_water_liters", 0.0) / 1000.0
+        rec_kl = comp["water"].get("recommended_water_liters", 0.0) / 1000.0
         fig_water = go.Figure(data=[
             go.Bar(
                 x=[comp["current_crop"], comp["recommended_crop"]],
-                y=[comp["water"]["current_water_liters"] / 1000.0, comp["water"]["recommended_water_liters"] / 1000.0],
-                marker_color=["#457b9d", "#a8dadc"],
-                text=[f"{comp['water']['current_water_liters']/1000:.0f} kL", f"{comp['water']['recommended_water_liters']/1000:.0f} kL"],
+                y=[curr_kl, rec_kl],
+                marker_color=["#0284c7", "#38bdf8"],
+                text=[f"{curr_kl:.0f} kL", f"{rec_kl:.0f} kL"],
                 textposition="auto"
             )
         ])
@@ -198,25 +205,26 @@ def render_current_crop_comparison():
         st.plotly_chart(fig_water, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
 
     # 4. Agronomic Rationale & Limitations
-    st.markdown("##### 💡 Agronomic Rationale & Honest Limitations")
+    st.markdown("##### 💡 Agronomic Rationale & Scientific Limitations")
+    st.caption("Understand why specific crop transitions are advantageous and what field factors must be considered.")
+
     c_r1, c_r2 = st.columns(2)
     with c_r1:
-        st.markdown("""
-        <div class="fasal-card" style="height: 180px;">
+        st.html(f"""
+        <div class="fasal-card" style="min-height: 180px;">
             <strong style="color: #1b4332;">Key Agronomic Reasons:</strong>
-            <ul style="font-size: 13px; color: #1e293b; margin-top: 8px;">
-        """, unsafe_allow_html=True)
-        for r in comp["key_reasons"]:
-            st.markdown(f"<li>{r}</li>", unsafe_allow_html=True)
-        st.markdown("</ul></div>", unsafe_allow_html=True)
+            <ul style="font-size: 13px; color: #1e293b; margin-top: 8px; padding-left: 18px;">
+                {''.join([f"<li>{r}</li>" for r in comp.get('key_reasons', [])])}
+            </ul>
+        </div>
+        """)
 
     with c_r2:
-        st.markdown("""
-        <div class="fasal-card" style="height: 180px;">
-            <strong style="color: #64748b;">Limitations &amp; Data Caveats:</strong>
-            <ul style="font-size: 12px; color: #475569; margin-top: 8px;">
-        """, unsafe_allow_html=True)
-        for l in comp["limitations"]:
-            st.markdown(f"<li>{l}</li>", unsafe_allow_html=True)
-        st.markdown("</ul></div>", unsafe_allow_html=True)
-
+        st.html(f"""
+        <div class="fasal-card" style="min-height: 180px;">
+            <strong style="color: #475569;">Limitations &amp; Data Caveats:</strong>
+            <ul style="font-size: 12px; color: #475569; margin-top: 8px; padding-left: 18px;">
+                {''.join([f"<li>{l}</li>" for l in comp.get('limitations', [])])}
+            </ul>
+        </div>
+        """)

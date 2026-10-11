@@ -64,39 +64,24 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# 9 Core Pages Definition
-PAGES = [
-    "Home Dashboard",
-    "Farm Assessment",
-    "Soil Analysis",
-    "Crop Recommendations",
-    "Current Crop Comparison",
-    "Farm Digital Twin",
-    "Dataset Explorer",
-    "Model Performance",
-    "Recommendation History"
-]
+from src.navigation import PAGES, initialize_navigation, navigate_to
 
-# Navigation Synchronizer
-def sync_nav():
-    st.session_state["current_tab"] = st.session_state["nav_radio"]
+# Initialize and resolve pending navigation before widget instantiation
+current_tab = initialize_navigation()
 
 # Primary Navigation Bar (Pill selector)
-# Ensure nav_radio is valid
-if st.session_state.get("nav_radio") not in PAGES:
-    st.session_state["nav_radio"] = PAGES[0]
-
 selected_page = st.radio(
     "Navigation",
     options=PAGES,
+    index=PAGES.index(current_tab) if current_tab in PAGES else 0,
     key="nav_radio",
     horizontal=True,
-    label_visibility="collapsed",
-    on_change=sync_nav
+    label_visibility="collapsed"
 )
 
-st.session_state["current_tab"] = st.session_state["nav_radio"]
-current_tab = st.session_state["current_tab"]
+if selected_page != current_tab:
+    st.session_state["current_tab"] = selected_page
+    current_tab = selected_page
 
 # Render the Selected View
 if current_tab == "Home Dashboard":

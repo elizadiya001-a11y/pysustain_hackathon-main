@@ -20,7 +20,7 @@ from core.config import CROP_AGRONOMY, IRRIGATION_METHODS
 
 
 def render_farm_assessment():
-    st.markdown('<div class="fasal-card-title">📋 Comprehensive Farm Assessment</div>', unsafe_allow_html=True)
+    st.html('<div class="fasal-card-title">📋 Comprehensive Farm Assessment</div>')
     st.caption("Enter your field details, upload soil or field photographs, and generate an AI-backed crop plan.")
 
     farms_df, _, _ = get_unified_agricultural_dataset()
@@ -47,15 +47,16 @@ def render_farm_assessment():
     with st.form("farmer_survey_form"):
         # Section 1: Farmer & Location Details
         st.markdown("#### 1. Farmer & Location Demographics")
+        st.caption("Enter farmer identification and geographical location details.")
         c1, c2, c3 = st.columns(3)
         with c1:
-            farmer_name = st.text_input("Farmer Name *", value=current_farm.get("farmer_name", "Rajesh Kumar"))
+            farmer_name = st.text_input("Farmer Name *", value=current_farm.get("farmer_name", "Rajesh Kumar"), help="Full name of the primary cultivator or landholder.")
         with c2:
-            farmer_id = st.text_input("Farmer ID / Aadhaar / KCC (Optional)", value=current_farm.get("farm_id", "FASAL-2026-001"))
+            farmer_id = st.text_input("Farmer ID / Aadhaar / KCC (Optional)", value=current_farm.get("farm_id", "FASAL-2026-001"), help="Government farmer ID, Kisan Credit Card, or unique parcel reference.")
         with c3:
-            village = st.text_input("Village", value="Rampur")
+            village = st.text_input("Village", value="Rampur", help="Village or revenue circle name.")
 
-        c4, c5, c6 = st.columns(3)
+        c4, c5 = st.columns(2)
         with c4:
             state = st.selectbox(
                 "State *",
@@ -63,27 +64,27 @@ def render_farm_assessment():
                 index=["Punjab", "Haryana", "Maharashtra", "Karnataka", "West Bengal", "Andhra Pradesh", "Rajasthan", "Uttar Pradesh"].index(current_farm.get("state", "Punjab")) if current_farm.get("state") in ["Punjab", "Haryana", "Maharashtra", "Karnataka", "West Bengal", "Andhra Pradesh", "Rajasthan", "Uttar Pradesh"] else 0
             )
         with c5:
-            district = st.text_input("District *", value=current_farm.get("district", "Ludhiana"))
-        with c6:
-            pass
+            district = st.text_input("District *", value=current_farm.get("district", "Ludhiana"), help="District name used for agro-climatic benchmarking.")
 
         # Section 2: Landholding & Current Practice
         st.markdown("#### 2. Landholding & Current Crop Practice")
+        st.caption("Specify land parcel size, current baseline crop, and target planting window.")
         col_a1, col_a2, col_a3 = st.columns(3)
         with col_a1:
-            area_val = st.number_input("Field Area *", min_value=0.1, max_value=50.0, value=float(current_farm.get("area_acres", 2.0)), step=0.25)
+            area_val = st.number_input("Field Area *", min_value=0.1, max_value=50.0, value=float(current_farm.get("area_acres", 2.0)), step=0.25, help="Physical size of the parcel.")
         with col_a2:
             area_unit = st.selectbox("Measurement Unit *", options=["Acres", "Hectares", "Bigha (Standard)", "Guntha"])
         with col_a3:
             current_crop = st.selectbox(
                 "Current Crop *",
                 options=list(CROP_AGRONOMY.keys()),
-                index=list(CROP_AGRONOMY.keys()).index(current_farm.get("current_crop", "Wheat")) if current_farm.get("current_crop") in CROP_AGRONOMY else 0
+                index=list(CROP_AGRONOMY.keys()).index(current_farm.get("current_crop", "Wheat")) if current_farm.get("current_crop") in CROP_AGRONOMY else 0,
+                help="Crop currently grown on this parcel as the economic baseline."
             )
 
         col_b1, col_b2, col_b3 = st.columns(3)
         with col_b1:
-            hist_yield = st.number_input("Current Crop Historical Yield (q/acre, if known)", min_value=0.0, max_value=500.0, value=18.5, step=0.5)
+            hist_yield = st.number_input("Current Crop Historical Yield (q/acre, if known)", min_value=0.0, max_value=500.0, value=18.5, step=0.5, help="Expected normal harvest yield in quintals per acre.")
         with col_b2:
             season = st.selectbox("Growing Season *", options=["Rabi (Winter)", "Kharif (Monsoon)", "Zaid (Summer)"])
         with col_b3:
@@ -91,7 +92,8 @@ def render_farm_assessment():
 
         # Section 3: Soil Test & Chemistry (Optional / Soil Card)
         st.markdown("#### 3. Soil Health & Testing (Optional)")
-        st.info("ℹ️ If you have not tested your soil recently, leave fields blank. The system will use agro-climatic regional baselines and flag estimates transparently.")
+        st.caption("Provide available soil laboratory test figures or leave blank to transparently use regional agro-climatic baselines.")
+        st.info("ℹ️ If you have not tested your soil recently, leave fields blank. The system will use regional soil surveys and flag estimates transparently.")
 
         col_s1, col_s2, col_s3 = st.columns(3)
         with col_s1:
@@ -114,6 +116,7 @@ def render_farm_assessment():
 
         # Section 4: Water, Climate & Budget
         st.markdown("#### 4. Water, Climate & Economic Preferences")
+        st.caption("Configure irrigation infrastructure, seasonal rainfall, and working capital budget.")
         col_w1, col_w2, col_w3 = st.columns(3)
         with col_w1:
             irrigation_type = st.selectbox("Primary Irrigation System *", options=list(IRRIGATION_METHODS.keys()), index=0)
@@ -132,12 +135,12 @@ def render_farm_assessment():
                 default=[]
             )
 
-        submit_btn = st.form_submit_button("🌾 Run Assessment & Generate Recommendations", use_container_width=True)
+        submit_btn = st.form_submit_button("🌾 Run Farm Assessment & Generate Recommendations", use_container_width=True)
 
     # Section 5: Field Imagery & Satellite Review
     st.markdown("---")
     st.markdown("#### 📸 Field Photograph & Satellite Imagery")
-    st.caption("Upload an image of your field or topsoil. FASAL's MobileNetV3 vision model will classify the visual soil type and texture.")
+    st.caption("Upload an image of your field or topsoil. FASAL's MobileNetV3 vision model will classify visual texture group.")
 
     col_img1, col_img2 = st.columns(2)
     uploaded_photo = None
@@ -153,34 +156,32 @@ def render_farm_assessment():
                     st.caption(f"Estimated Drainage: {img_analysis['visual_features']['estimated_drainage']} · Workability: {img_analysis['visual_features']['physical_workability']}")
                     st.info(f"⚠️ {img_analysis['disclaimer']}")
 
-                    # Try uploading to Supabase Storage
                     storage_url = upload_field_image(image_bytes, uploaded_file.name)
                     if storage_url:
-                        st.caption(f"☁️ Backed up securely to Supabase Storage private bucket.")
+                        st.caption(f"☁️ Backed up securely to Supabase Storage.")
                     uploaded_photo = uploaded_file.name
                 else:
                     st.error(f"Image analysis error: {img_analysis.get('error')}")
 
     with col_img2:
-        # Check if active farm has a real satellite chip locally
         farm_chip_path = Path(f"satellite_chips/{current_farm.get('farm_id', 'plot_001')}_rgb.png")
         if farm_chip_path.exists():
             st.image(str(farm_chip_path), caption=f"🛰️ Sentinel-2 MSI Chip ({current_farm.get('farm_id')})", use_container_width=True)
             if "ndvi_real" in current_farm and current_farm["ndvi_real"] is not None:
-                st.markdown(f"""
-                <div style="font-size: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px;">
+                st.html(f"""
+                <div style="font-size: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; line-height: 1.6;">
                     <div>🌿 <strong>Real Sentinel-2 NDVI:</strong> {current_farm.get('ndvi_real', 0.46):.3f}</div>
                     <div>💧 <strong>Real Moisture Index (NDMI):</strong> {current_farm.get('ndmi_real', -0.02):.3f}</div>
                     <div>🧱 <strong>SoilGrids Topsoil Texture:</strong> {current_farm.get('texture_usda', 'Clay Loam')} (Sand: {current_farm.get('sand_pct', 42):.1f}%, Clay: {current_farm.get('clay_pct', 32):.1f}%)</div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
         else:
-            st.markdown("""
+            st.html("""
             <div style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 25px; text-align: center; color: #64748b;">
                 🛰️ <strong>No Satellite Chip Available</strong><br>
                 <small>Select an existing digitized parcel (e.g. plot_001 to plot_250) to view Sentinel-2 multispectral imagery.</small>
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
     # Process Form Submission
     if submit_btn:
@@ -220,10 +221,11 @@ def render_farm_assessment():
         )
         st.session_state["current_recommendations"] = rec_results
 
-        # 3. Store assessment into Supabase recommendations_history
+        # 3. Store assessment into Supabase recommendations_history & local session
         top_alt = rec_results.get("top_recommendation_1", {})
         curr_cr = rec_results.get("current_crop", {})
         db_payload = {
+            "created_at": "Just now",
             "farmer_name": farmer_name,
             "farmer_id": farmer_id,
             "state": state,
@@ -246,16 +248,17 @@ def render_farm_assessment():
             "yield_delta_pct": round(((top_alt.get("yield_q_acre", 0) - curr_cr.get("yield_q_acre", 1)) / max(0.1, curr_cr.get("yield_q_acre", 1))) * 100.0, 1),
             "image_storage_path": uploaded_photo or "none"
         }
-        saved_db = save_recommendation_to_db(db_payload)
+        
+        # Cache locally in session state
+        if "submitted_assessments" not in st.session_state:
+            st.session_state["submitted_assessments"] = []
+        st.session_state["submitted_assessments"].insert(0, db_payload)
+
+        save_recommendation_to_db(db_payload)
 
         st.success("✅ Farm Assessment successfully analyzed and recommendation plan generated!")
-        if saved_db:
-            st.info("☁️ Record saved to Supabase recommendations_history.")
-        else:
-            st.caption("ℹ️ Cloud table pending migration; record cached in local session state.")
 
-        # Switch tab
-        st.session_state["nav_radio"] = "Crop Recommendations"
-        st.session_state["current_tab"] = "Crop Recommendations"
-        st.rerun()
+        # Switch tab smoothly
+        from src.navigation import navigate_to
+        navigate_to("Crop Recommendations")
 

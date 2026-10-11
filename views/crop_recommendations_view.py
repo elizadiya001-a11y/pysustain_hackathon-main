@@ -13,33 +13,37 @@ from src.reporting import generate_farmer_report_text, generate_report_csv_bytes
 
 
 def render_crop_recommendations():
-    st.markdown('<div class="fasal-card-title">🌾 Intelligent Crop Recommendations</div>', unsafe_allow_html=True)
-    st.caption("AI-ranked crop alternatives evaluated under local soil conditions, groundwater limits, and market economics.")
+    st.html('<div class="fasal-card-title">🌾 Intelligent Crop Recommendations</div>')
+    st.caption("Discover crops that suit your soil chemistry, local climate, and farm budget while staying strictly within aquifer water limits.")
 
     current_farm = st.session_state.get("current_farm", {})
 
     # Top Controls Bar: Water Cap, Irrigation, Season
-    col_c1, col_c2, col_c3 = st.columns(3)
-    with col_c1:
-        water_cap_mm = st.slider(
-            "💧 Aquifer Water Cap (mm)",
-            min_value=200,
-            max_value=1200,
-            value=int(current_farm.get("water_cap_mm", 600)),
-            step=50,
-            help="Strict water allocation limit to prevent aquifer depletion."
-        )
-    with col_c2:
-        irrigation_method = st.selectbox(
-            "Recommended Irrigation System",
-            options=["Drip", "Sprinkler", "Flood / Furrow", "Rainfed"],
-            index=0
-        )
-    with col_c3:
-        season_filter = st.selectbox(
-            "Season Filter",
-            options=["All Seasons", "Rabi", "Kharif"]
-        )
+    with st.expander("⚙️ Agronomic Parameters & Water Cap Filters", expanded=True):
+        st.caption("Adjust the aquifer limit and irrigation method to see which crop alternatives remain feasible and profitable.")
+        col_c1, col_c2, col_c3 = st.columns(3)
+        with col_c1:
+            water_cap_mm = st.slider(
+                "💧 Aquifer Water Cap (mm)",
+                min_value=200,
+                max_value=1200,
+                value=int(current_farm.get("water_cap_mm", 600)),
+                step=50,
+                help="Strict water allocation limit to prevent regional groundwater depletion."
+            )
+        with col_c2:
+            irrigation_method = st.selectbox(
+                "Recommended Irrigation System",
+                options=["Drip", "Sprinkler", "Flood / Furrow", "Rainfed"],
+                index=0,
+                help="High-efficiency irrigation reduces volumetric water consumption."
+            )
+        with col_c3:
+            season_filter = st.selectbox(
+                "Growing Season Filter",
+                options=["All Seasons", "Rabi", "Kharif"],
+                help="Filter candidate crops by agricultural cropping season."
+            )
 
     # Compute Recommendations
     recs = generate_crop_recommendations(
@@ -55,28 +59,31 @@ def render_crop_recommendations():
     top3 = recs["top_recommendation_3"]
 
     # 1. Executive Summary Pill
-    st.markdown(f"""
+    st.html(f"""
     <div style="background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <div>
                 <strong style="color: #1b4332; font-size: 15px;">🌟 Prime Sustainable Recommendation: {top1.get('crop')}</strong>
                 <div style="font-size: 13px; color: #2d6a4f; margin-top: 4px;">
                     Potential Net Profit Boost: <strong>+₹{top1.get('profit_delta_rs', 0):,.0f}</strong> · Water Conserved: <strong>{top1.get('water_saved_pct', 0):.0f}%</strong> vs baseline
                 </div>
             </div>
-            <span style="background: #2d6a4f; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">
-                {top1.get('suitability_score')}% Suitability
+            <span style="background: #2d6a4f; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                {top1.get('suitability_score')}% Suitability Match
             </span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     # 2. Side-by-Side Highlight Cards: Current vs Top 3
+    st.markdown("##### 🏆 Candidate Highlights: Current Baseline vs Top Alternatives")
+    st.caption("Compare your existing crop against the top AI-ranked diversified alternatives.")
+
     col_h1, col_h2, col_h3 = st.columns(3)
 
     # Card 1: Current Baseline
     with col_h1:
-        st.markdown(f"""
+        st.html(f"""
         <div class="fasal-card" style="border-top: 4px solid #64748b; height: 320px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <span style="font-size: 11px; font-weight: 700; color: #64748b;">CURRENT BASELINE</span>
@@ -97,11 +104,11 @@ def render_crop_recommendations():
                 </span>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     # Card 2: Top Recommendation #1
     with col_h2:
-        st.markdown(f"""
+        st.html(f"""
         <div class="fasal-card" style="border-top: 4px solid #2d6a4f; height: 320px; display: flex; flex-direction: column; justify-content: space-between; background: #f0fdf4;">
             <div>
                 <div style="display: flex; justify-content: space-between;">
@@ -125,12 +132,12 @@ def render_crop_recommendations():
                 </span>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     # Card 3: Top Recommendation #2
     with col_h3:
         if top2:
-            st.markdown(f"""
+            st.html(f"""
             <div class="fasal-card" style="border-top: 4px solid #40916c; height: 320px; display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <div style="display: flex; justify-content: space-between;">
@@ -154,33 +161,35 @@ def render_crop_recommendations():
                     </span>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
     # 3. Comprehensive Evaluated Crops Table
-    st.markdown('<div class="fasal-card-title">📋 Full Crop Ranking (Database Catalog)</div>', unsafe_allow_html=True)
+    st.html('<div class="fasal-card-title">📋 Full Crop Ranking (Database Catalog)</div>')
+    st.caption("Inspect every crop available in the agricultural database evaluated under your farm's soil and water constraints.")
+
     table_rows = []
     for r in recs["ranked_crops"]:
         table_rows.append({
-            "Crop": r["crop"],
-            "Season": r["season"],
-            "Suitability": f"{r['suitability_score']}%",
-            "Yield (q/ac)": f"{r['yield_q_acre']}",
+            "Crop Name": r["crop"],
+            "Growing Season": r["season"],
+            "Suitability Score": f"{r['suitability_score']}%",
+            "Expected Yield (q/acre)": f"{r['yield_q_acre']}",
+            "Expected Yield (t/ha)": f"{r['yield_tonnes_ha']}",
             "Gross Revenue (₹)": f"₹{r['gross_revenue']:,.0f}",
-            "Total Cost (₹)": f"₹{r['total_cost']:,.0f}",
+            "Cultivation Cost (₹)": f"₹{r['total_cost']:,.0f}",
             "Net Profit (₹)": f"₹{r['net_profit']:,.0f}",
-            "Net Profit/Ac (₹)": f"₹{r['net_profit_acre']:,.0f}",
-            "Profit Delta (₹)": f"+₹{r['profit_delta_rs']:,.0f}" if r['profit_delta_rs'] >= 0 else f"-₹{abs(r['profit_delta_rs']):,.0f}",
-            "Water Cap Status": "✅ Pass" if r["is_within_cap"] else f"⚠️ +{r['cap_delta_mm']} mm",
-            "Water Saved": f"{r['water_saved_pct']:.0f}%"
+            "Net Profit per Acre (₹/acre)": f"₹{r['net_profit_acre']:,.0f}",
+            "Net Profit Gain (₹)": f"+₹{r['profit_delta_rs']:,.0f}" if r['profit_delta_rs'] >= 0 else f"-₹{abs(r['profit_delta_rs']):,.0f}",
+            "Aquifer Water Cap Status": "✅ Within Cap" if r["is_within_cap"] else f"⚠️ Exceeds by {r['cap_delta_mm']} mm",
+            "Groundwater Conserved": f"{r['water_saved_pct']:.0f}%"
         })
     df_table = pd.DataFrame(table_rows)
     st.dataframe(df_table, use_container_width=True, hide_index=True)
 
-    # 4. Report Download Section
     # 4. Executive Farmer Advisory Report
     st.markdown("---")
-    st.markdown('<div class="fasal-card-title">📄 Executive Farmer Advisory Report</div>', unsafe_allow_html=True)
-    st.caption("Official agronomic briefing generated for extension officers, agricultural consultants, and farm operators.")
+    st.html('<div class="fasal-card-title">📄 Executive Farmer Advisory Report</div>')
+    st.caption("Review a consolidated summary of farm conditions, crop recommendations, and available economic indicators.")
 
     report_payload = {
         "farmer": {
@@ -224,9 +233,9 @@ def render_crop_recommendations():
     report_txt = generate_farmer_report_text(report_payload)
     report_csv = generate_report_csv_bytes(report_payload)
 
-    # Render Visual Advisory Dossier
+    # Render Visual Advisory Dossier cleanly using st.html
     area_ac = float(current_farm.get('area_acres', 2.0))
-    st.markdown(f"""
+    st.html(f"""
     <div class="fasal-card" style="border-left: 5px solid #2d6a4f; background: #ffffff;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 12px; margin-bottom: 14px;">
             <div>
@@ -284,7 +293,7 @@ def render_crop_recommendations():
             </ol>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     # Export & Download Buttons
     col_dl1, col_dl2 = st.columns(2)
@@ -307,4 +316,3 @@ def render_crop_recommendations():
 
     with st.expander("👁️ View Full Formatted Report Text", expanded=False):
         st.text(report_txt)
-

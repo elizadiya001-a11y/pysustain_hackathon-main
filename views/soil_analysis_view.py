@@ -16,7 +16,7 @@ from src.data_loader import fetch_table
 
 
 def render_soil_analysis():
-    st.markdown('<div class="fasal-card-title">🧪 Comprehensive Soil Analysis</div>', unsafe_allow_html=True)
+    st.html('<div class="fasal-card-title">🧪 Comprehensive Soil Analysis</div>')
     st.caption("Inspect chemical nutrient bioavailability, visual soil attributes, and physical texture guidelines.")
 
     current_farm = st.session_state.get("current_farm", {})
@@ -27,11 +27,11 @@ def render_soil_analysis():
     rating = soil_assessment["health_rating"]
     score_color = "#2d6a4f" if score >= 80 else ("#f77f00" if score >= 60 else "#d90429")
 
-    st.markdown(f"""
+    st.html(f"""
     <div class="fasal-card" style="border-left: 6px solid {score_color};">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <div>
-                <span style="font-size: 13px; color: #64748b; font-weight: 600;">COMPOSITE SOIL HEALTH SCORE</span>
+                <span style="font-size: 13px; color: #475569; font-weight: 600;">COMPOSITE SOIL HEALTH SCORE</span>
                 <h2 style="margin: 4px 0 0 0; color: {score_color}; font-size: 28px;">
                     {score} / 100 · {rating}
                 </h2>
@@ -40,25 +40,26 @@ def render_soil_analysis():
                 </div>
             </div>
             <div style="text-align: right;">
-                <span style="background: #e2e8f0; font-size: 12px; padding: 4px 8px; border-radius: 6px; font-weight: bold;">
+                <span style="background: #e2e8f0; font-size: 12px; padding: 4px 10px; border-radius: 6px; font-weight: bold; color: #1e293b;">
                     Texture: {current_farm.get('texture', 'Loam')}
                 </span>
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     # 2. Nutrient Cards Grid (ICAR Standards)
     st.markdown("##### 🌾 Chemical Nutrient Parameters (ICAR Standard)")
+    st.caption("Evaluate chemical macro-nutrients against Indian Council of Agricultural Research (ICAR) fertility benchmarks.")
     params = soil_assessment["parameters"]
 
     cols = st.columns(len(params))
     for i, (param_name, p_data) in enumerate(params.items()):
         with cols[i]:
             val_display = f"{p_data['value']}"
-            st.markdown(f"""
-            <div class="fasal-card" style="padding: 10px; text-align: center; height: 140px; display: flex; flex-direction: column; justify-content: space-between;">
-                <div style="font-size: 11px; font-weight: 700; color: #64748b;">{param_name}</div>
+            st.html(f"""
+            <div class="fasal-card" style="padding: 10px; text-align: center; min-height: 140px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="font-size: 11px; font-weight: 700; color: #475569;">{param_name}</div>
                 <div style="font-size: 18px; font-weight: 800; color: #1e293b; margin: 4px 0;">{val_display}</div>
                 <div>
                     <span style="background: {p_data['color']}22; color: {p_data['color']}; font-size: 11px; font-weight: 700; padding: 3px 6px; border-radius: 8px;">
@@ -66,27 +67,27 @@ def render_soil_analysis():
                     </span>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
     # 3. Actionable Amendments Plan
     if soil_assessment["recommended_amendments"]:
         st.markdown("##### 🛠️ Agronomic Soil Amendment Recommendations")
+        st.caption("Implement targeted biological and chemical practices to balance soil fertility and structure.")
         for rec in soil_assessment["recommended_amendments"]:
-            st.markdown(f"""
-            <div style="background: #f1f5f9; border-left: 4px solid #2d6a4f; padding: 8px 12px; border-radius: 4px; margin-bottom: 8px; font-size: 13px; color: #1e293b;">
+            st.html(f"""
+            <div style="background: #f1f5f9; border-left: 4px solid #2d6a4f; padding: 10px 14px; border-radius: 4px; margin-bottom: 8px; font-size: 13px; color: #1e293b;">
                 👉 {rec}
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
     st.markdown("---")
 
     # 4. Visual Soil Classifier & Photo Upload
     st.markdown("##### 📸 Visual Soil Photo Classification (MobileNetV3)")
-    st.caption("Upload a soil sample photo to estimate physical group and surface texture.")
+    st.caption("Upload a soil sample photograph to estimate physical group and surface texture using the MobileNetV3 model.")
 
     col_v1, col_v2 = st.columns([1, 1])
     with col_v1:
-        # Pre-loaded reference image buttons
         st.write("Or test with reference soil samples:")
         sample_cols = st.columns(5)
         selected_sample_path = None
@@ -101,9 +102,9 @@ def render_soil_analysis():
         test_path = v_file if v_file else selected_sample_path
 
         if test_path:
-            with st.spinner("Processing visual features..."):
+            with st.spinner("Processing visual features with MobileNetV3..."):
                 if isinstance(test_path, str):
-                    st.image(test_path, caption=f"Selected: {os.path.basename(test_path)}", width=240)
+                    st.image(test_path, caption=f"Selected Reference: {os.path.basename(test_path)}", width=240)
                     result = analyze_soil_image(test_path)
                 else:
                     bytes_data = test_path.read()
@@ -118,9 +119,9 @@ def render_soil_analysis():
     with col_v2:
         last_res = st.session_state.get("last_soil_img_result")
         if last_res:
-            st.markdown(f"""
+            st.html(f"""
             <div class="fasal-card">
-                <div style="font-size: 12px; color: #64748b; font-weight: 700;">PREDICTED SOIL CLASS</div>
+                <div style="font-size: 12px; color: #475569; font-weight: 700;">PREDICTED SOIL CLASS</div>
                 <h3 style="margin: 4px 0; color: #1b4332;">{last_res['predicted_soil_group']}</h3>
                 <div style="color: #2d6a4f; font-weight: 700; font-size: 14px; margin-bottom: 8px;">
                     Model Confidence: {last_res['confidence_pct']}%
@@ -131,7 +132,7 @@ def render_soil_analysis():
                     <div>🧱 <strong>Typical Texture:</strong> {last_res['visual_features']['typical_texture']}</div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
             # Bar chart of probabilities
             probs = last_res["class_probabilities"]
@@ -153,7 +154,7 @@ def render_soil_analysis():
 
             st.warning(f"⚠️ {last_res['disclaimer']}")
         else:
-            st.info("Upload or select a soil photo above to view visual texture and class distribution.")
+            st.info("Upload or select a soil photo on the left to view visual texture and class distribution.")
 
     st.markdown("---")
 
@@ -166,15 +167,14 @@ def render_soil_analysis():
         guide_cols = st.columns(min(len(soil_types_df), 4))
         for g_idx, (_, r) in enumerate(soil_types_df.iterrows()):
             with guide_cols[g_idx % 4]:
-                st.markdown(f"""
-                <div class="fasal-card" style="font-size: 12px; height: 180px;">
+                st.html(f"""
+                <div class="fasal-card" style="font-size: 12px; min-height: 180px;">
                     <strong style="color: #1b4332; font-size: 14px;">{r['soil_type']}</strong>
-                    <div style="color: #64748b; margin: 4px 0 6px 0; font-size: 11px;">{r.get('description', '')[:70]}...</div>
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; font-size: 11px;">
+                    <div style="color: #475569; margin: 4px 0 6px 0; font-size: 11px;">{r.get('description', '')[:70]}...</div>
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; font-size: 11px; color: #1e293b;">
                         <strong>Hand Test:</strong> {r.get('hand_test', '')}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
     else:
         st.caption("Hand ribbon test reference cards loaded from core agronomy catalog.")
-

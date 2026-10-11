@@ -42,6 +42,16 @@ def build_crop_comparison(current_crop_res: Dict[str, Any], alt_crop_res: Dict[s
     alt_profit = float(alt_crop_res.get("net_profit", 0.0))
     profit_diff = round(alt_profit - curr_profit, 1)
 
+    curr_profit_acre = float(current_crop_res.get("net_profit_acre", 0.0))
+    alt_profit_acre = float(alt_crop_res.get("net_profit_acre", 0.0))
+    if curr_profit_acre == 0.0 and curr_profit != 0.0:
+        area = float(current_crop_res.get("area_acres", 2.0))
+        curr_profit_acre = round(curr_profit / max(0.1, area), 1)
+    if alt_profit_acre == 0.0 and alt_profit != 0.0:
+        area = float(alt_crop_res.get("area_acres", 2.0))
+        alt_profit_acre = round(alt_profit / max(0.1, area), 1)
+    profit_acre_diff = round(alt_profit_acre - curr_profit_acre, 1)
+
     # Water
     curr_water = float(current_crop_res.get("water_liters", 1.0))
     alt_water = float(alt_crop_res.get("water_liters", 1.0))
@@ -51,7 +61,7 @@ def build_crop_comparison(current_crop_res: Dict[str, Any], alt_crop_res: Dict[s
     # Reasons & Drivers
     reasons = []
     if profit_diff > 0:
-        reasons.append(f"Higher Net Profit Margin (+₹{profit_diff:,.0f} overall)")
+        reasons.append(f"Higher Net Profit Margin (+₹{profit_diff:,.0f} overall, +₹{profit_acre_diff:,.0f}/acre)")
     if water_saved_pct > 15:
         reasons.append(f"Conserves {water_saved_pct:.0f}% groundwater compared to {curr_crop}")
     if alt_crop_res.get("is_msp_staple") is False and alt_crop_res.get("category") == "Pulse / Legume":
@@ -87,7 +97,10 @@ def build_crop_comparison(current_crop_res: Dict[str, Any], alt_crop_res: Dict[s
             "cost_difference": cost_diff,
             "current_net_profit": curr_profit,
             "recommended_net_profit": alt_profit,
-            "profit_difference": profit_diff
+            "profit_difference": profit_diff,
+            "current_net_profit_acre": curr_profit_acre,
+            "recommended_net_profit_acre": alt_profit_acre,
+            "profit_acre_difference": profit_acre_diff
         },
         "water": {
             "current_water_liters": curr_water,

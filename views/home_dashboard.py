@@ -3,7 +3,7 @@ views/home_dashboard.py
 -----------------------
 Home Dashboard Screen for FASAL AI.
 Displays regional twin KPIs, active farm selector, live Supabase connectivity,
-and quick module shortcuts.
+step-by-step user instructions, and quick module shortcuts.
 """
 
 import streamlit as st
@@ -11,37 +11,35 @@ import plotly.graph_objects as go
 from src.data_loader import get_unified_agricultural_dataset, get_farm_record_by_id
 from src.supabase_client import check_connection_health
 from core.config import CROP_AGRONOMY
-
-
-def navigate_to(page_name: str):
-    """Safely updates both radio navigation and current tab state, then triggers rerun."""
-    st.session_state["nav_radio"] = page_name
-    st.session_state["current_tab"] = page_name
-    st.rerun()
+from src.navigation import navigate_to
 
 
 def render_home_dashboard():
     farms_df, market_df, db_source = get_unified_agricultural_dataset()
     current_farm = st.session_state.get("current_farm", farms_df.iloc[0].to_dict() if not farms_df.empty else {})
 
+    # One-line explanation for main screen
+    st.html('<div class="fasal-card-title">🌾 Welcome to FASAL AI Dashboard</div>')
+    st.caption("Explore your farm's digital representation, monitor regional agro-climatic conditions, and access intelligent crop advisory modules.")
+
     # Connection banner
     health = check_connection_health()
     if health["connected"]:
-        st.markdown(f"""
+        st.html(f"""
         <div style="background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 10px 14px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
             <div style="color: #1b4332; font-size: 13px;">
-                🟢 <strong>Live Supabase Cloud Connected</strong> · Project: <code>bwlopgkkaasgmkdkoayb</code> · {health['tables'].get('farms', {}).get('count', 250)} farms registered
+                🟢 <strong>Live Supabase Cloud Connected</strong> · Project: <code>bwlopgkkaasgmkdkoayb</code> · {health['tables'].get('farms', {}).get('count', 250)} registered farm parcels synced
             </div>
             <span style="background: #2d6a4f; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
                 Online
             </span>
         </div>
-        """, unsafe_allow_html=True)
+        """)
     else:
         st.warning("⚠️ Supabase credentials missing. Operating with high-fidelity local farm digital twin.")
 
     # High-Level Regional KPI Grid
-    st.markdown("""
+    st.html("""
     <div class="metric-grid">
         <div class="metric-pill">
             <span class="metric-label">Digitized Farms</span>
@@ -64,10 +62,25 @@ def render_home_dashboard():
             <span class="metric-delta delta-pos">Sentinel-2 MSI</span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
+
+    # Step-by-Step User Instructions
+    with st.expander("📘 How to Use FASAL AI — Step-by-Step Agricultural Workflow", expanded=True):
+        st.markdown("""
+        Follow these simple steps to analyze your farm and generate data-backed crop decisions:
+
+        1. **Select or Survey Your Farm Parcel:** Choose an existing digitized parcel below or click **"📋 New Assessment"** to enter your field details.
+        2. **Enter Soil & Irrigation Details:** Open **Farm Assessment** to record soil pH, available nutrients, irrigation method, and upload a field photo.
+        3. **Diagnose Soil Health:** Open **Soil Analysis** to view ICAR-benchmarked macro-nutrients and MobileNetV3 visual texture classification.
+        4. **Generate Crop Recommendations:** Open **Crop Recommendations** to view alternative crops ranked by net profit within your aquifer water cap.
+        5. **Compare Economic & Water Trade-Offs:** Open **Current Crop Comparison** to inspect yield parity, revenue gains, and groundwater savings side-by-side.
+        6. **Simulate Farming Scenarios:** Open **Farm Digital Twin** to test what-if scenarios for irrigation depth, fertilizers, and climate stress.
+        7. **Export Advisory Briefing:** Download your official **Executive Farmer Advisory Report** as text or CSV for field execution.
+        """)
 
     # Active Farm Parcel Card
-    st.markdown('<div class="fasal-card-title">📍 Active Farm Digital Twin</div>', unsafe_allow_html=True)
+    st.html('<div class="fasal-card-title">📍 Active Farm Digital Twin</div>')
+    st.caption("Review your selected farm profile, soil properties, and landholding baseline.")
 
     if not farms_df.empty:
         farm_options = [
@@ -102,7 +115,7 @@ def render_home_dashboard():
             st.rerun()
 
         # Render Active Farm Profile Card
-        st.markdown(f"""
+        st.html(f"""
         <div class="fasal-card">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                 <div>
@@ -126,13 +139,15 @@ def render_home_dashboard():
                 <div>🗓️ <strong>Sowing Date:</strong> {current_farm.get('sowing_date')}</div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
     # Fast Navigation Cards
-    st.markdown('<div class="fasal-card-title">⚡ Quick Modules</div>', unsafe_allow_html=True)
+    st.html('<div class="fasal-card-title">⚡ Quick Modules</div>')
+    st.caption("Quickly jump into assessment intake, crop recommendations, or the interactive digital twin simulator.")
+
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("""
+        st.html("""
         <div class="fasal-card" style="text-align: center; height: 160px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="font-size: 26px;">📋</div>
@@ -140,12 +155,12 @@ def render_home_dashboard():
                 <p style="font-size: 12px; color: #475569; margin: 4px 0;">Survey questionnaire &amp; photo upload</p>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
         if st.button("Start Assessment", key="nav_btn_assess", use_container_width=True):
             navigate_to("Farm Assessment")
 
     with c2:
-        st.markdown("""
+        st.html("""
         <div class="fasal-card" style="text-align: center; height: 160px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="font-size: 26px;">🌾</div>
@@ -153,12 +168,12 @@ def render_home_dashboard():
                 <p style="font-size: 12px; color: #475569; margin: 4px 0;">Ranked options with water cap and profit</p>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
         if st.button("View Recommendations", key="nav_btn_rec", use_container_width=True):
             navigate_to("Crop Recommendations")
 
     with c3:
-        st.markdown("""
+        st.html("""
         <div class="fasal-card" style="text-align: center; height: 160px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="font-size: 26px;">🌐</div>
@@ -166,26 +181,28 @@ def render_home_dashboard():
                 <p style="font-size: 12px; color: #475569; margin: 4px 0;">Interactive simulator, levers &amp; SMS</p>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
         if st.button("Launch Twin", key="nav_btn_twin", use_container_width=True):
             navigate_to("Farm Digital Twin")
 
     # Regional Crop Distribution Chart (Horizontal Bar for mobile & desktop clarity)
     if not farms_df.empty and "current_crop" in farms_df.columns:
-        st.markdown('<div class="fasal-card-title">📊 Regional Monoculture Distribution (250 Parcels)</div>', unsafe_allow_html=True)
+        st.html('<div class="fasal-card-title">📊 Regional Monoculture Distribution (250 Parcels)</div>')
+        st.caption("Examine crop acreage and diversity patterns across digitized regional farm holdings.")
+
         crop_counts = farms_df["current_crop"].value_counts().reset_index()
-        crop_counts.columns = ["Crop", "Parcels"]
-        crop_counts = crop_counts.sort_values(by="Parcels", ascending=True)
+        crop_counts.columns = ["Crop Name", "Number of Farm Parcels"]
+        crop_counts = crop_counts.sort_values(by="Number of Farm Parcels", ascending=True)
 
         fig = go.Figure(go.Bar(
-            y=crop_counts["Crop"],
-            x=crop_counts["Parcels"],
+            y=crop_counts["Crop Name"],
+            x=crop_counts["Number of Farm Parcels"],
             orientation="h",
             marker=dict(
                 color=["#74c69d", "#52b788", "#40916c", "#2d6a4f", "#1b4332", "#2d6a4f", "#40916c", "#52b788"][:len(crop_counts)],
                 line=dict(color="#1b4332", width=1.0)
             ),
-            text=[f"{val} parcels" for val in crop_counts["Parcels"]],
+            text=[f"{val} parcels" for val in crop_counts["Number of Farm Parcels"]],
             textposition="auto"
         ))
         fig.update_layout(
