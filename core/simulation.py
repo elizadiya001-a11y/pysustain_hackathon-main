@@ -230,6 +230,7 @@ def simulate_scenario(
 
         # Energy
         "energy_kwh": round(energy_kwh, 1),
+        "pump_energy_kwh": round(energy_kwh, 1),
         "energy_cost": round(energy_cost, 0),
 
         # Financials
@@ -250,6 +251,7 @@ def simulate_scenario(
         "profit_delta_rs": round(profit_delta_rs, 0),
         "profit_delta_pct": round(profit_delta_pct, 1),
         "energy_saved_kwh": round(energy_saved_kwh, 1),
+        "energy_saved_rs": round(energy_saved_kwh * PUMP_PARAMETERS["electricity_tariff_rs_kwh"], 0),
 
         # Risk
         "risk_level": risk_level,

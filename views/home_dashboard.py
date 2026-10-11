@@ -3,7 +3,7 @@ views/home_dashboard.py
 -----------------------
 Home Dashboard Screen for FASAL AI.
 Displays regional twin KPIs, active farm selector, live Supabase connectivity,
-and quick shortcuts.
+and quick module shortcuts.
 """
 
 import streamlit as st
@@ -11,6 +11,13 @@ import plotly.graph_objects as go
 from src.data_loader import get_unified_agricultural_dataset, get_farm_record_by_id
 from src.supabase_client import check_connection_health
 from core.config import CROP_AGRONOMY
+
+
+def navigate_to(page_name: str):
+    """Safely updates both radio navigation and current tab state, then triggers rerun."""
+    st.session_state["nav_radio"] = page_name
+    st.session_state["current_tab"] = page_name
+    st.rerun()
 
 
 def render_home_dashboard():
@@ -85,9 +92,8 @@ def render_home_dashboard():
         with col_btn:
             st.write("")
             st.write("")
-            if st.button("📋 New Assessment", use_container_width=True):
-                st.session_state["current_tab"] = "Farm Assessment"
-                st.rerun()
+            if st.button("📋 New Assessment", key="home_btn_new_assess", use_container_width=True):
+                navigate_to("Farm Assessment")
 
         selected_id = selected_opt.split(" — ")[0].strip()
         if selected_id != cur_id:
@@ -103,7 +109,7 @@ def render_home_dashboard():
                     <h4 style="margin: 0; font-size: 18px; font-weight: 700; color: #1b4332;">
                         {current_farm.get('farmer_name', 'Farmer')}
                     </h4>
-                    <div style="font-size: 13px; color: #64748b; margin-top: 2px;">
+                    <div style="font-size: 13px; color: #475569; margin-top: 2px;">
                         Parcel ID: <strong>{current_farm.get('farm_id')}</strong> · {current_farm.get('district')}, {current_farm.get('state')}
                     </div>
                 </div>
@@ -111,7 +117,7 @@ def render_home_dashboard():
                     {current_farm.get('area_acres')} Acres ({round(float(current_farm.get('area_acres', 2.0))*0.4047, 2)} ha)
                 </span>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 13px; margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 13px; margin-top: 12px; border-top: 1px solid #cbd5e1; padding-top: 10px;">
                 <div>🌾 <strong>Current Crop:</strong> {current_farm.get('current_crop')}</div>
                 <div>🧪 <strong>Soil pH:</strong> {current_farm.get('ph')}</div>
                 <div>🍂 <strong>Organic Carbon:</strong> {current_farm.get('organic_carbon')}%</div>
@@ -131,13 +137,12 @@ def render_home_dashboard():
             <div>
                 <div style="font-size: 26px;">📋</div>
                 <strong style="color: #1b4332;">Farm Assessment</strong>
-                <p style="font-size: 12px; color: #64748b; margin: 4px 0;">Survey questionnaire &amp; photo upload</p>
+                <p style="font-size: 12px; color: #475569; margin: 4px 0;">Survey questionnaire &amp; photo upload</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Start Assessment", key="nav_btn_assess", use_container_width=True):
-            st.session_state["current_tab"] = "Farm Assessment"
-            st.rerun()
+            navigate_to("Farm Assessment")
 
     with c2:
         st.markdown("""
@@ -145,13 +150,12 @@ def render_home_dashboard():
             <div>
                 <div style="font-size: 26px;">🌾</div>
                 <strong style="color: #1b4332;">Crop Recommendations</strong>
-                <p style="font-size: 12px; color: #64748b; margin: 4px 0;">Ranked options with water cap and profit</p>
+                <p style="font-size: 12px; color: #475569; margin: 4px 0;">Ranked options with water cap and profit</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("View Recommendations", key="nav_btn_rec", use_container_width=True):
-            st.session_state["current_tab"] = "Crop Recommendations"
-            st.rerun()
+            navigate_to("Crop Recommendations")
 
     with c3:
         st.markdown("""
@@ -159,38 +163,38 @@ def render_home_dashboard():
             <div>
                 <div style="font-size: 26px;">🌐</div>
                 <strong style="color: #1b4332;">Digital Farm Twin</strong>
-                <p style="font-size: 12px; color: #64748b; margin: 4px 0;">Interactive simulator, levers &amp; SMS</p>
+                <p style="font-size: 12px; color: #475569; margin: 4px 0;">Interactive simulator, levers &amp; SMS</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Launch Twin", key="nav_btn_twin", use_container_width=True):
-            st.session_state["current_tab"] = "Farm Digital Twin"
-            st.rerun()
+            navigate_to("Farm Digital Twin")
 
-    # Regional Crop Distribution Chart
+    # Regional Crop Distribution Chart (Horizontal Bar for mobile & desktop clarity)
     if not farms_df.empty and "current_crop" in farms_df.columns:
         st.markdown('<div class="fasal-card-title">📊 Regional Monoculture Distribution (250 Parcels)</div>', unsafe_allow_html=True)
         crop_counts = farms_df["current_crop"].value_counts().reset_index()
         crop_counts.columns = ["Crop", "Parcels"]
+        crop_counts = crop_counts.sort_values(by="Parcels", ascending=True)
 
         fig = go.Figure(go.Bar(
-            x=crop_counts["Crop"],
-            y=crop_counts["Parcels"],
+            y=crop_counts["Crop"],
+            x=crop_counts["Parcels"],
+            orientation="h",
             marker=dict(
-                color=["#2d6a4f", "#40916c", "#52b788", "#74c69d", "#95d5b2", "#b7e4c7", "#d8f3dc", "#e9f5ed"][:len(crop_counts)],
-                line=dict(color="#1b4332", width=1.5)
+                color=["#74c69d", "#52b788", "#40916c", "#2d6a4f", "#1b4332", "#2d6a4f", "#40916c", "#52b788"][:len(crop_counts)],
+                line=dict(color="#1b4332", width=1.0)
             ),
-            text=crop_counts["Parcels"],
+            text=[f"{val} parcels" for val in crop_counts["Parcels"]],
             textposition="auto"
         ))
         fig.update_layout(
-            height=260,
-            margin=dict(l=10, r=10, t=10, b=10),
+            height=280,
+            margin=dict(l=80, r=20, t=10, b=30),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=True, gridcolor="#e2e8f0"),
-            font=dict(family="sans-serif", size=11, color="#1e293b")
+            xaxis=dict(showgrid=True, gridcolor="#e2e8f0", title="Number of Farm Parcels"),
+            yaxis=dict(showgrid=False),
+            font=dict(family="sans-serif", size=12, color="#1e293b")
         )
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})

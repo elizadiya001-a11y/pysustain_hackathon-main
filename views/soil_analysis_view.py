@@ -149,7 +149,7 @@ def render_soil_analysis():
                 xaxis=dict(title="Probability (%)", showgrid=True, gridcolor="#e2e8f0"),
                 yaxis=dict(autorange="reversed")
             )
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "scrollZoom": False})
 
             st.warning(f"⚠️ {last_res['disclaimer']}")
         else:

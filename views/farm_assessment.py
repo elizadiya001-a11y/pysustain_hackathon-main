@@ -255,6 +255,7 @@ def render_farm_assessment():
             st.caption("ℹ️ Cloud table pending migration; record cached in local session state.")
 
         # Switch tab
+        st.session_state["nav_radio"] = "Crop Recommendations"
         st.session_state["current_tab"] = "Crop Recommendations"
         st.rerun()
 

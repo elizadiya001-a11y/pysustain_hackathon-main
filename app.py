@@ -1,8 +1,6 @@
 """
 FASAL AI — Intelligent Crop Recommendation & Farm Digital Twin.
-PySustain Hackathon · Track: Intelligent Solutions for Sustainable Agriculture.
-
-Authors: Team FASAL (Gargi Bhojkar, Srijon Sarkar, Shansita Padhi, Diya Elizabeth Reji)
+Enterprise Agricultural Intelligence & Farm Digital Twin Platform.
 """
 
 import os
@@ -45,6 +43,9 @@ if "current_farm" not in st.session_state:
 if "current_tab" not in st.session_state:
     st.session_state["current_tab"] = "Home Dashboard"
 
+if "nav_radio" not in st.session_state:
+    st.session_state["nav_radio"] = st.session_state["current_tab"]
+
 current_farm = st.session_state["current_farm"]
 
 # Render Consistent FASAL Header
@@ -76,21 +77,25 @@ PAGES = [
     "Recommendation History"
 ]
 
+# Navigation Synchronizer
+def sync_nav():
+    st.session_state["current_tab"] = st.session_state["nav_radio"]
+
 # Primary Navigation Bar (Pill selector)
+# Ensure nav_radio is valid
+if st.session_state.get("nav_radio") not in PAGES:
+    st.session_state["nav_radio"] = PAGES[0]
+
 selected_page = st.radio(
     "Navigation",
     options=PAGES,
-    index=PAGES.index(st.session_state["current_tab"]) if st.session_state["current_tab"] in PAGES else 0,
+    key="nav_radio",
     horizontal=True,
     label_visibility="collapsed",
-    key="nav_radio"
+    on_change=sync_nav
 )
 
-# Synchronize tab selection
-if selected_page != st.session_state["current_tab"]:
-    st.session_state["current_tab"] = selected_page
-    st.rerun()
-
+st.session_state["current_tab"] = st.session_state["nav_radio"]
 current_tab = st.session_state["current_tab"]
 
 # Render the Selected View
@@ -113,7 +118,7 @@ elif current_tab == "Model Performance":
 elif current_tab == "Recommendation History":
     render_recommendation_history()
 
-# Sidebar: Quick Info, Cloud Twin Status & Wi-Fi Demo
+# Sidebar: Quick Info, Cloud Twin Status & Remote Access
 with st.sidebar:
     st.markdown("### 🌾 FASAL AI Control")
     st.caption("Intelligent Crop Recommendation & Farm Digital Twin")
@@ -136,8 +141,8 @@ with st.sidebar:
     """)
 
     st.divider()
-    st.markdown("##### 📱 Hackathon Wi-Fi Demo")
-    st.caption("To open on an Android phone over local Wi-Fi, run:")
+    st.markdown("##### 📱 Field Device & Mobile Access")
+    st.caption("To open on mobile devices or tablets over local Wi-Fi, run:")
     st.code("python -m streamlit run app.py --server.address 0.0.0.0", language="bash")
     st.divider()
-    st.caption("BACSE101 — PySustain CSE Hackathon 2026")
+    st.caption("FASAL AI Enterprise Edition · v2.4 Production")

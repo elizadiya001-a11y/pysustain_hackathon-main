@@ -14,10 +14,10 @@ def render_model_info():
     m = predictor.metrics
 
     st.markdown('<div class="fasal-card-title">🔬 Machine Learning & Scientific Validation</div>', unsafe_allow_html=True)
-    st.caption("Rigorous algorithmic evaluation under PySustain-2026 hackathon criteria (Objectives O1–O7, UN SDGs).")
+    st.caption("Rigorous algorithmic evaluation under enterprise agricultural criteria and UN SDGs.")
 
     # Metrics Grid
-    st.markdown("##### 📈 Model Validation Metrics (Objective O1 & O2)")
+    st.markdown("##### 📈 Model Validation Metrics & Scientific Calibration")
     st.markdown(f"""
     <div class="metric-grid">
         <div class="metric-pill">

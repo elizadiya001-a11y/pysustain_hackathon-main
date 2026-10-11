@@ -138,17 +138,20 @@ def render_digital_twin():
     st.markdown("##### ⚡ Groundwater Pumping Energy Physics & Feature Drivers")
     c_p1, c_p2 = st.columns(2)
     with c_p1:
+        pump_kwh = sim.get('pump_energy_kwh', sim.get('energy_kwh', 0.0))
+        energy_cost = sim.get('energy_cost', 0.0)
+        energy_saved_rs = sim.get('energy_saved_rs', sim.get('energy_saved_kwh', 0.0) * 6.5)
         st.markdown(f"""
         <div class="fasal-card" style="height: 190px;">
             <strong style="color: #1b4332;">Groundwater Pumping Physics:</strong>
-            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+            <div style="font-size: 12px; color: #475569; margin-top: 4px;">
                 Formula: <code>E = (ρ × g × V × H) / (3.6 × 10⁶ × η)</code>
             </div>
             <div style="margin-top: 10px; font-size: 13px; line-height: 1.6;">
                 <div>💧 Lift Head (Aquifer Depth): <strong>40.0 meters</strong></div>
-                <div>⚡ Pumping Energy Consumed: <strong>{sim['pump_energy_kwh']:.1f} kWh</strong></div>
-                <div>🔌 Estimated Power Bill: <strong>₹{sim['energy_cost']:,.0f}</strong></div>
-                <div>🌱 Energy Saved vs Baseline: <strong>₹{sim['energy_saved_rs']:,.0f}</strong></div>
+                <div>⚡ Pumping Energy Consumed: <strong>{pump_kwh:.1f} kWh</strong></div>
+                <div>🔌 Estimated Power Bill: <strong>₹{energy_cost:,.0f}</strong></div>
+                <div>🌱 Energy Saved vs Baseline: <strong>₹{energy_saved_rs:,.0f}</strong></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
