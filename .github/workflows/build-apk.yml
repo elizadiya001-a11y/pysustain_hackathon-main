@@ -21,13 +21,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Build Debug APK
+      - name: Build with Gradle
         working-directory: ./android
         run: gradle assembleDebug --stacktrace
 
@@ -37,4 +31,3 @@ jobs:
           name: fasal-ai-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 14
-
